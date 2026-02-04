@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arduino Multi-Sensor Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #13182b;
+            --bg-card: #1a1f35;
+            --accent-green: #00ff88;
+            --accent-cyan: #00d4ff;
+            --accent-red: #ff3366;
+            --accent-orange: #ff9500;
+            --text-primary: #e8edf5;
+            --text-secondary: #8b95ab;
+            --border-color: #2a3147;
+            --glow-green: rgba(0, 255, 136, 0.3);
+            --glow-red: rgba(255, 51, 102, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(0, 255, 136, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            letter-spacing: 2px;
+        }
+
+        .connection-panel {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.8s ease-out 0.2s backwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .btn {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 1rem 3rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-connect {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            color: var(--bg-primary);
+        }
+
+        .btn-connect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--glow-green);
+        }
+
+        .btn-disconnect {
+            background: linear-gradient(135deg, var(--accent-red), var(--accent-orange));
+            color: white;
+        }
+
+        .btn-disconnect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--glow-red);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-left: 1rem;
+            letter-spacing: 1px;
+        }
+
+        .status-connected {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            box-shadow: 0 0 20px var(--glow-green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .status-disconnected {
+            background: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .sensor-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.8s ease-out backwards;
+        }
+
+        .sensor-card:nth-child(1) { animation-delay: 0.3s; }
+        .sensor-card:nth-child(2) { animation-delay: 0.4s; }
+        .sensor-card:nth-child(3) { animation-delay: 0.5s; }
+
+        .sensor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.5s ease;
+        }
+
+        .sensor-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .sensor-card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 212, 255, 0.2);
+        }
+
+        .sensor-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1));
+            border: 2px solid var(--border-color);
+        }
+
+        .sensor-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        .sensor-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .sensor-unit {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .alert-panel {
+            background: var(--bg-card);
+            border: 2px solid var(--accent-red);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            display: none;
+            animation: alertPulse 1s ease-in-out infinite;
+        }
+
+        .alert-panel.active {
+            display: block;
+            box-shadow: 0 0 40px var(--glow-red);
+        }
+
+        @keyframes alertPulse {
+            0%, 100% {
+                border-color: var(--accent-red);
+                box-shadow: 0 0 40px var(--glow-red);
+            }
+            50% {
+                border-color: var(--accent-orange);
+                box-shadow: 0 0 60px rgba(255, 149, 0, 0.4);
+            }
+        }
+
+        .alert-content {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .alert-indicator {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: 0 0 30px var(--glow-red);
+            animation: indicatorBlink 0.5s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes indicatorBlink {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1);
+            }
+        }
+
+        .alert-text {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-red);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-message {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .chart-container {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            height: 400px;
+            animation: fadeIn 0.8s ease-out 0.6s backwards;
+        }
+
+        .chart-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-text {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            animation: fadeIn 1s ease-out 0.8s backwards;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .sensor-value {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛡️ Sensor Monitor</h1>
+            <p class="subtitle">Real-Time Environmental Monitoring System</p>
+        </header>
+
+        <div class="connection-panel">
+            <button id="connectBtn" class="btn btn-connect">
+                📡 Arduino'ga ulanish
+            </button>
+            <button id="disconnectBtn" class="btn btn-disconnect" style="display: none;">
+                🔌 Uzish
+            </button>
+            <span id="statusBadge" class="status-badge status-disconnected">OFFLINE</span>
+        </div>
+
+        <div id="alertPanel" class="alert-panel">
+            <div class="alert-content">
+                <div class="alert-indicator">🚨</div>
+                <div class="alert-text">
+                    <div class="alert-title">⚠️ GAZ XAVFI ANIQLANDI!</div>
+                    <div class="alert-message">Gaz darajasi xavfli chegaradan oshdi. Darhol xonani shamollating!</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="sensor-card">
+                <div class="sensor-icon">🌡️</div>
+                <div class="sensor-label">Harorat</div>
+                <div class="sensor-value" id="tempValue">--</div>
+                <div class="sensor-unit">°C</div>
+            </div>
+
+            <div class="sensor-card">
+                <div class="sensor-icon">💧</div>
+                <div class="sensor-label">Namlik</div>
+                <div class="sensor-value" id="humidValue">--</div>
+                <div class="sensor-unit">%</div>
+            </div>
+
+            <div class="sensor-card">
+                <div class="sensor-icon">☁️</div>
+                <div class="sensor-label">Gaz Darajasi (MQ-2)</div>
+                <div class="sensor-value" id="gasValue">--</div>
+                <div class="sensor-unit">PPM</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">📊 Real-Time Ma'lumotlar</div>
+            <canvas id="dataChart"></canvas>
+        </div>
+
+        <p class="info-text">
+            💡 <strong>Qo'llanma:</strong> "Arduino'ga ulanish" tugmasini bosing va serial portni tanlang. 
+            Ma'lumotlar avtomatik ravishda yangilanadi. <br>
+            ⚙️ Arduino Serial Monitor formatiga mos keladi: <code>harorat:namlik:gaz</code>
+        </p>
+    </div>
+
+    <script>
+        // Global o'zgaruvchilar
+        let port;
+        let reader;
+        let keepReading = true;
+        let chart;
+        const maxDataPoints = 30;
+        const gasThreshold = 400; // Gaz xavf chegarasi
+
+        // Ma'lumotlar uchun massivlar
+        const dataHistory = {
+            labels: [],
+            temperature: [],
+            humidity: [],
+            gas: []
+        };
+
+        // Chart.js sozlamalari
+        const chartConfig = {
+            type: 'line',
+            data: {
+                labels: dataHistory.labels,
+                datasets: [
+                    {
+                        label: 'Harorat (°C)',
+                        data: dataHistory.temperature,
+                        borderColor: '#00ff88',
+                        backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Namlik (%)',
+                        data: dataHistory.humidity,
+                        borderColor: '#00d4ff',
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Gaz (PPM)',
+                        data: dataHistory.gas,
+                        borderColor: '#ff9500',
+                        backgroundColor: 'rgba(255, 149, 0, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            color: '#e8edf5',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 14,
+                                weight: '600'
+                            },
+                            padding: 15
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        grid: {
+                            color: '#2a3147',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#8b95ab',
+                            font: {
+                                family: 'Rajdhani'
+                            }
+                        }
+                    },
+                    y: {
+                        display: true,
+                        grid: {
+                            color: '#2a3147',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#8b95ab',
+                            font: {
+                                family: 'Rajdhani'
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        };
+
+        // Chart yaratish
+        const ctx = document.getElementById('dataChart').getContext('2d');
+        chart = new Chart(ctx, chartConfig);
+
+        // DOM elementlari
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const statusBadge = document.getElementById('statusBadge');
+        const alertPanel = document.getElementById('alertPanel');
+        const tempValue = document.getElementById('tempValue');
+        const humidValue = document.getElementById('humidValue');
+        const gasValue = document.getElementById('gasValue');
+
+        // Arduino'ga ulanish
+        connectBtn.addEventListener('click', async () => {
+            try {
+                // Web Serial API mavjudligini tekshirish
+                if (!('serial' in navigator)) {
+                    alert('❌ Web Serial API bu brauzerda qo\'llab-quvvatlanmaydi!\n\nChrome, Edge yoki Opera brauzerni ishlatishingiz kerak.');
+                    return;
+                }
+
+                // Serial port so'rash
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 9600 });
+
+                // UI yangilash
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'inline-block';
+                statusBadge.textContent = 'ONLINE';
+                statusBadge.className = 'status-badge status-connected';
+
+                // Ma'lumotlarni o'qishni boshlash
+                keepReading = true;
+                readSerialData();
+
+            } catch (error) {
+                console.error('Ulanish xatosi:', error);
+                alert('❌ Arduino\'ga ulanishda xatolik yuz berdi!\n\n' + error.message);
+            }
+        });
+
+        // Uzish
+        disconnectBtn.addEventListener('click', async () => {
+            keepReading = false;
+            
+            if (reader) {
+                await reader.cancel();
+            }
+            
+            if (port) {
+                await port.close();
+            }
+
+            connectBtn.style.display = 'inline-block';
+            disconnectBtn.style.display = 'none';
+            statusBadge.textContent = 'OFFLINE';
+            statusBadge.className = 'status-badge status-disconnected';
+            alertPanel.classList.remove('active');
+
+            // Qiymatlarni tozalash
+            tempValue.textContent = '--';
+            humidValue.textContent = '--';
+            gasValue.textContent = '--';
+        });
+
+        // Serial ma'lumotlarni o'qish
+        async function readSerialData() {
+            const textDecoder = new TextDecoderStream();
+            const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+            reader = textDecoder.readable.getReader();
+
+            let buffer = '';
+
+            try {
+                while (keepReading) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    buffer += value;
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        processData(line.trim());
+                    }
+                }
+            } catch (error) {
+                console.error('O\'qish xatosi:', error);
+            } finally {
+                reader.releaseLock();
+            }
+
+            await readableStreamClosed.catch(() => {});
+        }
+
+        // Ma'lumotlarni qayta ishlash
+        function processData(data) {
+            if (!data) return;
+
+            // Format: harorat:namlik:gaz
+            const values = data.split(':');
+            
+            if (values.length !== 3) return;
+
+            const temperature = parseFloat(values[0]);
+            const humidity = parseFloat(values[1]);
+            const gas = parseFloat(values[2]);
+
+            // Validatsiya
+            if (isNaN(temperature) || isNaN(humidity) || isNaN(gas)) return;
+
+            // UI yangilash
+            tempValue.textContent = temperature.toFixed(1);
+            humidValue.textContent = humidity.toFixed(1);
+            gasValue.textContent = gas.toFixed(0);
+
+            // Gaz xavfini tekshirish va alert ko'rsatish
+            if (gas > gasThreshold) {
+                alertPanel.classList.add('active');
+            } else {
+                alertPanel.classList.remove('active');
+            }
+
+            // Ma'lumotlarni grafikka qo'shish
+            updateChart(temperature, humidity, gas);
+        }
+
+        // Grafikni yangilash
+        function updateChart(temperature, humidity, gas) {
+            const currentTime = new Date().toLocaleTimeString('uz-UZ');
+
+            dataHistory.labels.push(currentTime);
+            dataHistory.temperature.push(temperature);
+            dataHistory.humidity.push(humidity);
+            dataHistory.gas.push(gas);
+
+            // Maksimal nuqtalar sonini cheklash
+            if (dataHistory.labels.length > maxDataPoints) {
+                dataHistory.labels.shift();
+                dataHistory.temperature.shift();
+                dataHistory.humidity.shift();
+                dataHistory.gas.shift();
+            }
+
+            chart.update('none'); // Animatsiyasiz yangilash (tezroq)
+        }
+
+        // Sahifa yopilganda ulanishni uzish
+        window.addEventListener('beforeunload', () => {
+            if (port && port.readable) {
+                keepReading = false;
+                port.close();
+            }
+        });
+    </script>
+</body>
+</html>

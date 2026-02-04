@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arduino Multi-Sensor Monitor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Arduino Sensor Matrix</title>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800;900&family=Audiowide&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #13182b;
-            --bg-card: #1a1f35;
-            --accent-green: #00ff88;
-            --accent-cyan: #00d4ff;
-            --accent-red: #ff3366;
-            --accent-orange: #ff9500;
-            --text-primary: #e8edf5;
-            --text-secondary: #8b95ab;
-            --border-color: #2a3147;
-            --glow-green: rgba(0, 255, 136, 0.3);
-            --glow-red: rgba(255, 51, 102, 0.3);
+            --bg-deep: #0f0e17;
+            --bg-mid: #1a1825;
+            --bg-surface: #252136;
+            --accent-cyan: #00f5ff;
+            --accent-pink: #ff006e;
+            --accent-purple: #8338ec;
+            --accent-yellow: #ffbe0b;
+            --accent-green: #06ffa5;
+            --text-bright: #fffffe;
+            --text-muted: #a7a9be;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
 
         * {
@@ -28,107 +28,197 @@
             box-sizing: border-box;
         }
 
+        @keyframes gradientShift {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            33% {
+                transform: translateY(-20px) rotate(3deg);
+            }
+            66% {
+                transform: translateY(-10px) rotate(-3deg);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes rotate3d {
+            from {
+                transform: rotate3d(1, 1, 1, 0deg);
+            }
+            to {
+                transform: rotate3d(1, 1, 1, 360deg);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -1000px 0;
+            }
+            100% {
+                background-position: 1000px 0;
+            }
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                filter: drop-shadow(0 0 20px var(--accent-cyan)) brightness(1);
+            }
+            50% {
+                filter: drop-shadow(0 0 40px var(--accent-pink)) brightness(1.2);
+            }
+        }
+
         body {
-            font-family: 'Rajdhani', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            font-family: 'Exo 2', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-bright);
             overflow-x: hidden;
+            min-height: 100vh;
             position: relative;
         }
 
+        /* Animated background with particles */
         body::before {
             content: '';
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 200%;
+            height: 200%;
             background: 
-                radial-gradient(circle at 20% 20%, rgba(0, 255, 136, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
-            pointer-events: none;
+                radial-gradient(circle at 20% 30%, rgba(131, 56, 236, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(255, 0, 110, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 40% 80%, rgba(0, 245, 255, 0.15) 0%, transparent 40%);
+            background-size: 100% 100%;
+            animation: gradientShift 20s ease infinite;
             z-index: 0;
         }
 
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 2rem;
-            position: relative;
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             z-index: 1;
+            pointer-events: none;
         }
 
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        /* Header with 3D text effect */
         header {
             text-align: center;
-            margin-bottom: 3rem;
-            animation: slideDown 0.8s ease-out;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            margin-bottom: 4rem;
+            perspective: 1000px;
         }
 
         h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 3rem;
+            font-family: 'Audiowide', cursive;
+            font-size: 5rem;
             font-weight: 900;
-            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink), var(--accent-purple), var(--accent-yellow));
+            background-size: 300% 300%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 4px;
+            animation: gradientShift 8s ease infinite, float 6s ease-in-out infinite;
+            text-shadow: 0 0 80px rgba(0, 245, 255, 0.5);
+            transform-style: preserve-3d;
+            letter-spacing: 8px;
+            margin-bottom: 1rem;
         }
 
         .subtitle {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            font-weight: 400;
-            letter-spacing: 2px;
-        }
-
-        .connection-panel {
-            background: var(--bg-card);
-            border: 2px solid var(--border-color);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            animation: fadeIn 0.8s ease-out 0.2s backwards;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .btn {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1rem;
-            font-weight: 700;
-            padding: 1rem 3rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            font-size: 1.4rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            letter-spacing: 6px;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            animation: float 8s ease-in-out infinite;
+            animation-delay: 0.5s;
+        }
+
+        /* Glassmorphic connection panel */
+        .connection-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 2px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 3rem;
+            margin-bottom: 3rem;
             position: relative;
             overflow: hidden;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .connection-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.03) 50%,
+                transparent 70%
+            );
+            animation: shimmer 3s infinite;
+        }
+
+        .connection-panel:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 
+                0 20px 60px rgba(0, 245, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border-color: var(--accent-cyan);
+        }
+
+        /* Animated buttons */
+        .btn {
+            font-family: 'Audiowide', cursive;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 1.5rem 4rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1;
         }
 
         .btn::before {
@@ -139,88 +229,107 @@
             width: 0;
             height: 0;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.3);
             transform: translate(-50%, -50%);
             transition: width 0.6s, height 0.6s;
         }
 
         .btn:hover::before {
-            width: 300px;
-            height: 300px;
+            width: 500px;
+            height: 500px;
+        }
+
+        .btn:hover {
+            transform: translateY(-5px) scale(1.1);
+        }
+
+        .btn:active {
+            transform: translateY(-2px) scale(1.05);
         }
 
         .btn-connect {
-            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
-            color: var(--bg-primary);
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: var(--bg-deep);
+            box-shadow: 0 10px 40px rgba(0, 245, 255, 0.4);
         }
 
         .btn-connect:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px var(--glow-green);
+            box-shadow: 0 15px 60px rgba(0, 245, 255, 0.6);
+            filter: brightness(1.2);
         }
 
         .btn-disconnect {
-            background: linear-gradient(135deg, var(--accent-red), var(--accent-orange));
-            color: white;
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-yellow));
+            color: var(--bg-deep);
+            box-shadow: 0 10px 40px rgba(255, 0, 110, 0.4);
         }
 
         .btn-disconnect:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px var(--glow-red);
+            box-shadow: 0 15px 60px rgba(255, 0, 110, 0.6);
+            filter: brightness(1.2);
         }
 
+        /* Animated status badge */
         .status-badge {
             display: inline-block;
-            padding: 0.5rem 1.5rem;
+            padding: 1rem 2.5rem;
             border-radius: 50px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-left: 1rem;
-            letter-spacing: 1px;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-left: 2rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            position: relative;
+            transition: all 0.4s ease;
         }
 
-        .status-connected {
-            background: var(--accent-green);
-            color: var(--bg-primary);
-            box-shadow: 0 0 20px var(--glow-green);
+        .status-badge::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: currentColor;
             animation: pulse 2s ease-in-out infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.7;
-            }
+        .status-connected {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            color: var(--bg-deep);
+            box-shadow: 0 0 40px rgba(6, 255, 165, 0.6);
         }
 
         .status-disconnected {
-            background: var(--border-color);
-            color: var(--text-secondary);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            color: var(--text-muted);
+            border: 2px solid var(--glass-border);
         }
 
+        /* 3D sensor cards */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2.5rem;
+            margin-bottom: 3rem;
+            perspective: 2000px;
         }
 
         .sensor-card {
-            background: var(--bg-card);
-            border: 2px solid var(--border-color);
-            border-radius: 16px;
-            padding: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 2px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 3rem 2.5rem;
             position: relative;
             overflow: hidden;
-            transition: all 0.3s ease;
-            animation: fadeIn 0.8s ease-out backwards;
+            transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transform-style: preserve-3d;
+            cursor: pointer;
         }
-
-        .sensor-card:nth-child(1) { animation-delay: 0.3s; }
-        .sensor-card:nth-child(2) { animation-delay: 0.4s; }
-        .sensor-card:nth-child(3) { animation-delay: 0.5s; }
 
         .sensor-card::before {
             content: '';
@@ -228,119 +337,219 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.5s ease;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.8s ease;
         }
 
         .sensor-card:hover::before {
-            transform: scaleX(1);
+            transform: translateX(100%);
         }
 
         .sensor-card:hover {
+            transform: translateY(-20px) rotateX(10deg) rotateY(5deg) scale(1.05);
+            box-shadow: 
+                0 30px 80px rgba(0, 0, 0, 0.5),
+                0 0 60px rgba(0, 245, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
             border-color: var(--accent-cyan);
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(0, 212, 255, 0.2);
         }
 
+        .sensor-card:nth-child(1):hover {
+            box-shadow: 
+                0 30px 80px rgba(0, 0, 0, 0.5),
+                0 0 60px rgba(255, 190, 11, 0.4);
+            border-color: var(--accent-yellow);
+        }
+
+        .sensor-card:nth-child(2):hover {
+            box-shadow: 
+                0 30px 80px rgba(0, 0, 0, 0.5),
+                0 0 60px rgba(0, 245, 255, 0.4);
+            border-color: var(--accent-cyan);
+        }
+
+        .sensor-card:nth-child(3):hover {
+            box-shadow: 
+                0 30px 80px rgba(0, 0, 0, 0.5),
+                0 0 60px rgba(131, 56, 236, 0.4);
+            border-color: var(--accent-purple);
+        }
+
+        /* Animated sensor icons */
         .sensor-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1));
-            border: 2px solid var(--border-color);
+            font-size: 3.5rem;
+            margin: 0 auto 2rem;
+            background: linear-gradient(135deg, var(--glass-bg), rgba(255, 255, 255, 0.1));
+            border: 3px solid var(--glass-border);
+            position: relative;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .sensor-card:hover .sensor-icon {
+            transform: scale(1.2) rotate(360deg);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .sensor-icon::before {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--accent-cyan), var(--accent-pink), var(--accent-purple));
+            opacity: 0;
+            filter: blur(20px);
+            transition: opacity 0.5s ease;
+        }
+
+        .sensor-card:hover .sensor-icon::before {
+            opacity: 0.6;
+            animation: rotate3d 4s linear infinite;
         }
 
         .sensor-label {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text-secondary);
+            font-family: 'Audiowide', cursive;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 0.5rem;
+            letter-spacing: 3px;
+            margin-bottom: 1rem;
+            text-align: center;
         }
 
         .sensor-value {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 3rem;
+            font-family: 'Audiowide', cursive;
+            font-size: 4rem;
             font-weight: 900;
             line-height: 1;
             margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            text-align: center;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            filter: drop-shadow(0 0 30px rgba(0, 245, 255, 0.5));
+            transition: all 0.3s ease;
+        }
+
+        .sensor-card:hover .sensor-value {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 50px rgba(0, 245, 255, 0.8));
         }
 
         .sensor-unit {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
+            font-size: 1.3rem;
+            color: var(--text-muted);
             font-weight: 500;
+            text-align: center;
         }
 
+        /* Epic alert panel with animations */
         .alert-panel {
-            background: var(--bg-card);
-            border: 2px solid var(--accent-red);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 3px solid var(--accent-pink);
+            border-radius: 30px;
+            padding: 3rem;
+            margin-bottom: 3rem;
             display: none;
-            animation: alertPulse 1s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+            animation: alertShake 0.5s ease-in-out infinite;
         }
 
         .alert-panel.active {
             display: block;
-            box-shadow: 0 0 40px var(--glow-red);
         }
 
-        @keyframes alertPulse {
+        @keyframes alertShake {
             0%, 100% {
-                border-color: var(--accent-red);
-                box-shadow: 0 0 40px var(--glow-red);
+                transform: translateX(0) scale(1);
             }
-            50% {
-                border-color: var(--accent-orange);
-                box-shadow: 0 0 60px rgba(255, 149, 0, 0.4);
+            25% {
+                transform: translateX(-5px) scale(1.02);
+            }
+            75% {
+                transform: translateX(5px) scale(1.02);
+            }
+        }
+
+        .alert-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255, 0, 110, 0.1) 10px,
+                rgba(255, 0, 110, 0.1) 20px
+            );
+            animation: alertStripes 1s linear infinite;
+        }
+
+        @keyframes alertStripes {
+            0% {
+                transform: translateX(0) translateY(0);
+            }
+            100% {
+                transform: translateX(20px) translateY(20px);
             }
         }
 
         .alert-content {
             display: flex;
             align-items: center;
-            gap: 2rem;
+            gap: 3rem;
+            position: relative;
+            z-index: 1;
         }
 
         .alert-indicator {
-            width: 80px;
-            height: 80px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
-            background: var(--accent-red);
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-yellow));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.5rem;
-            box-shadow: 0 0 30px var(--glow-red);
-            animation: indicatorBlink 0.5s ease-in-out infinite;
+            font-size: 4rem;
+            box-shadow: 0 0 60px rgba(255, 0, 110, 0.8);
+            animation: alertPulse 0.8s ease-in-out infinite;
             flex-shrink: 0;
+            position: relative;
         }
 
-        @keyframes indicatorBlink {
+        @keyframes alertPulse {
             0%, 100% {
-                opacity: 1;
                 transform: scale(1);
+                box-shadow: 0 0 60px rgba(255, 0, 110, 0.8);
             }
             50% {
-                opacity: 0.7;
-                transform: scale(1.1);
+                transform: scale(1.2) rotate(10deg);
+                box-shadow: 0 0 100px rgba(255, 0, 110, 1);
             }
+        }
+
+        .alert-indicator::before {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            border-radius: 50%;
+            border: 4px dashed var(--accent-pink);
+            animation: rotate3d 3s linear infinite;
         }
 
         .alert-text {
@@ -348,50 +557,87 @@
         }
 
         .alert-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--accent-red);
+            font-family: 'Audiowide', cursive;
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 0.5rem;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            animation: pulse 1s ease-in-out infinite;
         }
 
         .alert-message {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
+            font-size: 1.2rem;
+            color: var(--text-bright);
+            line-height: 1.6;
         }
 
+        /* Advanced chart container */
         .chart-container {
-            background: var(--bg-card);
-            border: 2px solid var(--border-color);
-            border-radius: 16px;
-            padding: 2rem;
-            height: 400px;
-            animation: fadeIn 0.8s ease-out 0.6s backwards;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 2px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 3rem;
+            min-height: 500px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+
+        .chart-container:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            border-color: var(--accent-cyan);
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-pink), var(--accent-purple), var(--accent-yellow));
+            background-size: 300% 100%;
+            animation: gradientShift 3s linear infinite;
         }
 
         .chart-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
+            font-family: 'Audiowide', cursive;
+            font-size: 1.5rem;
             font-weight: 700;
-            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 1.5rem;
+            letter-spacing: 4px;
+            margin-bottom: 2rem;
+            text-align: center;
         }
 
         .info-text {
             text-align: center;
-            color: var(--text-secondary);
-            margin-top: 2rem;
-            font-size: 0.9rem;
-            animation: fadeIn 1s ease-out 0.8s backwards;
+            color: var(--text-muted);
+            margin-top: 3rem;
+            font-size: 1rem;
+            line-height: 1.8;
+            padding: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
         }
 
+        /* Responsive */
         @media (max-width: 768px) {
             h1 {
-                font-size: 2rem;
+                font-size: 3rem;
             }
             
             .dashboard-grid {
@@ -399,34 +645,60 @@
             }
             
             .sensor-value {
-                font-size: 2.5rem;
+                font-size: 3rem;
             }
+
+            .alert-content {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--accent-pink), var(--accent-yellow));
         }
     </style>
 </head>
 <body>
+    <!-- Animated particles canvas -->
+    <canvas id="particles-canvas"></canvas>
+
     <div class="container">
         <header>
-            <h1>🛡️ Sensor Monitor</h1>
-            <p class="subtitle">Real-Time Environmental Monitoring System</p>
+            <h1>⚡ SENSOR MATRIX ⚡</h1>
+            <p class="subtitle">◈ Real-Time Quantum Monitoring ◈</p>
         </header>
 
         <div class="connection-panel">
             <button id="connectBtn" class="btn btn-connect">
-                📡 Arduino'ga ulanish
+                🚀 Activate Connection
             </button>
             <button id="disconnectBtn" class="btn btn-disconnect" style="display: none;">
-                🔌 Uzish
+                🔌 Terminate Link
             </button>
-            <span id="statusBadge" class="status-badge status-disconnected">OFFLINE</span>
+            <span id="statusBadge" class="status-badge status-disconnected">Offline</span>
         </div>
 
         <div id="alertPanel" class="alert-panel">
             <div class="alert-content">
                 <div class="alert-indicator">🚨</div>
                 <div class="alert-text">
-                    <div class="alert-title">⚠️ GAZ XAVFI ANIQLANDI!</div>
-                    <div class="alert-message">Gaz darajasi xavfli chegaradan oshdi. Darhol xonani shamollating!</div>
+                    <div class="alert-title">⚠️ Hazard Detected!</div>
+                    <div class="alert-message">Gaz darajasi xavfli chegaradan oshdi! Darhol xonani shamollating va xavfsizlik choralari ko'ring!</div>
                 </div>
             </div>
         </div>
@@ -434,48 +706,126 @@
         <div class="dashboard-grid">
             <div class="sensor-card">
                 <div class="sensor-icon">🌡️</div>
-                <div class="sensor-label">Harorat</div>
+                <div class="sensor-label">Temperature</div>
                 <div class="sensor-value" id="tempValue">--</div>
-                <div class="sensor-unit">°C</div>
+                <div class="sensor-unit">°Celsius</div>
             </div>
 
             <div class="sensor-card">
                 <div class="sensor-icon">💧</div>
-                <div class="sensor-label">Namlik</div>
+                <div class="sensor-label">Humidity</div>
                 <div class="sensor-value" id="humidValue">--</div>
-                <div class="sensor-unit">%</div>
+                <div class="sensor-unit">Percent</div>
             </div>
 
             <div class="sensor-card">
                 <div class="sensor-icon">☁️</div>
-                <div class="sensor-label">Gaz Darajasi (MQ-2)</div>
+                <div class="sensor-label">Gas Level</div>
                 <div class="sensor-value" id="gasValue">--</div>
                 <div class="sensor-unit">PPM</div>
             </div>
         </div>
 
         <div class="chart-container">
-            <div class="chart-title">📊 Real-Time Ma'lumotlar</div>
+            <div class="chart-title">◈ Data Stream Visualization ◈</div>
             <canvas id="dataChart"></canvas>
         </div>
 
-        <p class="info-text">
-            💡 <strong>Qo'llanma:</strong> "Arduino'ga ulanish" tugmasini bosing va serial portni tanlang. 
-            Ma'lumotlar avtomatik ravishda yangilanadi. <br>
-            ⚙️ Arduino Serial Monitor formatiga mos keladi: <code>harorat:namlik:gaz</code>
-        </p>
+        <div class="info-text">
+            💡 <strong>System Guide:</strong> "Activate Connection" tugmasini bosib Arduino'ni ulang. 
+            Ma'lumotlar real-time yangilanadi va interaktiv grafikda ko'rsatiladi.<br>
+            ⚙️ <strong>Data Format:</strong> <code>harorat:namlik:gaz</code> | 
+            🎯 <strong>Alert Threshold:</strong> Gas > 400 PPM
+        </div>
     </div>
 
     <script>
-        // Global o'zgaruvchilar
+        // Particles Animation
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        const particleCount = 80;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+                this.color = ['#00f5ff', '#ff006e', '#8338ec', '#ffbe0b'][Math.floor(Math.random() * 4)];
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                // Connect nearby particles
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 150) {
+                        ctx.strokeStyle = particles[i].color;
+                        ctx.lineWidth = 0.5;
+                        ctx.globalAlpha = 1 - distance / 150;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1;
+            requestAnimationFrame(animateParticles);
+        }
+
+        animateParticles();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Arduino Connection Logic
         let port;
         let reader;
         let keepReading = true;
         let chart;
         const maxDataPoints = 30;
-        const gasThreshold = 400; // Gaz xavf chegarasi
+        const gasThreshold = 400;
 
-        // Ma'lumotlar uchun massivlar
         const dataHistory = {
             labels: [],
             temperature: [],
@@ -483,44 +833,52 @@
             gas: []
         };
 
-        // Chart.js sozlamalari
         const chartConfig = {
             type: 'line',
             data: {
                 labels: dataHistory.labels,
                 datasets: [
                     {
-                        label: 'Harorat (°C)',
+                        label: 'Temperature (°C)',
                         data: dataHistory.temperature,
-                        borderColor: '#00ff88',
-                        backgroundColor: 'rgba(0, 255, 136, 0.1)',
-                        borderWidth: 3,
+                        borderColor: '#ffbe0b',
+                        backgroundColor: 'rgba(255, 190, 11, 0.1)',
+                        borderWidth: 4,
                         tension: 0.4,
                         fill: true,
-                        pointRadius: 0,
-                        pointHoverRadius: 6
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#ffbe0b',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
                     },
                     {
-                        label: 'Namlik (%)',
+                        label: 'Humidity (%)',
                         data: dataHistory.humidity,
-                        borderColor: '#00d4ff',
-                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                        borderWidth: 3,
+                        borderColor: '#00f5ff',
+                        backgroundColor: 'rgba(0, 245, 255, 0.1)',
+                        borderWidth: 4,
                         tension: 0.4,
                         fill: true,
-                        pointRadius: 0,
-                        pointHoverRadius: 6
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#00f5ff',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
                     },
                     {
-                        label: 'Gaz (PPM)',
+                        label: 'Gas (PPM)',
                         data: dataHistory.gas,
-                        borderColor: '#ff9500',
-                        backgroundColor: 'rgba(255, 149, 0, 0.1)',
-                        borderWidth: 3,
+                        borderColor: '#8338ec',
+                        backgroundColor: 'rgba(131, 56, 236, 0.1)',
+                        borderWidth: 4,
                         tension: 0.4,
                         fill: true,
-                        pointRadius: 0,
-                        pointHoverRadius: 6
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#8338ec',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
                     }
                 ]
             },
@@ -530,42 +888,55 @@
                 plugins: {
                     legend: {
                         display: true,
-                        position: 'bottom',
+                        position: 'top',
                         labels: {
-                            color: '#e8edf5',
+                            color: '#fffffe',
                             font: {
-                                family: 'Rajdhani',
+                                family: 'Exo 2',
                                 size: 14,
                                 weight: '600'
                             },
-                            padding: 15
+                            padding: 20,
+                            usePointStyle: true
                         }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 14, 23, 0.9)',
+                        titleColor: '#00f5ff',
+                        bodyColor: '#fffffe',
+                        borderColor: '#00f5ff',
+                        borderWidth: 2,
+                        padding: 15,
+                        displayColors: true,
+                        boxPadding: 8
                     }
                 },
                 scales: {
                     x: {
                         display: true,
                         grid: {
-                            color: '#2a3147',
+                            color: 'rgba(255, 255, 255, 0.05)',
                             drawBorder: false
                         },
                         ticks: {
-                            color: '#8b95ab',
+                            color: '#a7a9be',
                             font: {
-                                family: 'Rajdhani'
+                                family: 'Exo 2',
+                                size: 12
                             }
                         }
                     },
                     y: {
                         display: true,
                         grid: {
-                            color: '#2a3147',
+                            color: 'rgba(255, 255, 255, 0.05)',
                             drawBorder: false
                         },
                         ticks: {
-                            color: '#8b95ab',
+                            color: '#a7a9be',
                             font: {
-                                family: 'Rajdhani'
+                                family: 'Exo 2',
+                                size: 12
                             }
                         }
                     }
@@ -573,15 +944,17 @@
                 interaction: {
                     intersect: false,
                     mode: 'index'
+                },
+                animation: {
+                    duration: 750,
+                    easing: 'easeInOutQuart'
                 }
             }
         };
 
-        // Chart yaratish
-        const ctx = document.getElementById('dataChart').getContext('2d');
-        chart = new Chart(ctx, chartConfig);
+        const chartCtx = document.getElementById('dataChart').getContext('2d');
+        chart = new Chart(chartCtx, chartConfig);
 
-        // DOM elementlari
         const connectBtn = document.getElementById('connectBtn');
         const disconnectBtn = document.getElementById('disconnectBtn');
         const statusBadge = document.getElementById('statusBadge');
@@ -590,36 +963,30 @@
         const humidValue = document.getElementById('humidValue');
         const gasValue = document.getElementById('gasValue');
 
-        // Arduino'ga ulanish
         connectBtn.addEventListener('click', async () => {
             try {
-                // Web Serial API mavjudligini tekshirish
                 if (!('serial' in navigator)) {
-                    alert('❌ Web Serial API bu brauzerda qo\'llab-quvvatlanmaydi!\n\nChrome, Edge yoki Opera brauzerni ishlatishingiz kerak.');
+                    alert('❌ Web Serial API qo\'llab-quvvatlanmaydi!\n\nChrome, Edge yoki Opera brauzerni ishlatishingiz kerak.');
                     return;
                 }
 
-                // Serial port so'rash
                 port = await navigator.serial.requestPort();
                 await port.open({ baudRate: 9600 });
 
-                // UI yangilash
                 connectBtn.style.display = 'none';
                 disconnectBtn.style.display = 'inline-block';
-                statusBadge.textContent = 'ONLINE';
+                statusBadge.textContent = 'Online';
                 statusBadge.className = 'status-badge status-connected';
 
-                // Ma'lumotlarni o'qishni boshlash
                 keepReading = true;
                 readSerialData();
 
             } catch (error) {
-                console.error('Ulanish xatosi:', error);
-                alert('❌ Arduino\'ga ulanishda xatolik yuz berdi!\n\n' + error.message);
+                console.error('Connection error:', error);
+                alert('❌ Ulanishda xatolik!\n\n' + error.message);
             }
         });
 
-        // Uzish
         disconnectBtn.addEventListener('click', async () => {
             keepReading = false;
             
@@ -633,17 +1000,15 @@
 
             connectBtn.style.display = 'inline-block';
             disconnectBtn.style.display = 'none';
-            statusBadge.textContent = 'OFFLINE';
+            statusBadge.textContent = 'Offline';
             statusBadge.className = 'status-badge status-disconnected';
             alertPanel.classList.remove('active');
 
-            // Qiymatlarni tozalash
             tempValue.textContent = '--';
             humidValue.textContent = '--';
             gasValue.textContent = '--';
         });
 
-        // Serial ma'lumotlarni o'qish
         async function readSerialData() {
             const textDecoder = new TextDecoderStream();
             const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
@@ -665,7 +1030,7 @@
                     }
                 }
             } catch (error) {
-                console.error('O\'qish xatosi:', error);
+                console.error('Read error:', error);
             } finally {
                 reader.releaseLock();
             }
@@ -673,11 +1038,9 @@
             await readableStreamClosed.catch(() => {});
         }
 
-        // Ma'lumotlarni qayta ishlash
         function processData(data) {
             if (!data) return;
 
-            // Format: harorat:namlik:gaz
             const values = data.split(':');
             
             if (values.length !== 3) return;
@@ -686,26 +1049,21 @@
             const humidity = parseFloat(values[1]);
             const gas = parseFloat(values[2]);
 
-            // Validatsiya
             if (isNaN(temperature) || isNaN(humidity) || isNaN(gas)) return;
 
-            // UI yangilash
             tempValue.textContent = temperature.toFixed(1);
             humidValue.textContent = humidity.toFixed(1);
             gasValue.textContent = gas.toFixed(0);
 
-            // Gaz xavfini tekshirish va alert ko'rsatish
             if (gas > gasThreshold) {
                 alertPanel.classList.add('active');
             } else {
                 alertPanel.classList.remove('active');
             }
 
-            // Ma'lumotlarni grafikka qo'shish
             updateChart(temperature, humidity, gas);
         }
 
-        // Grafikni yangilash
         function updateChart(temperature, humidity, gas) {
             const currentTime = new Date().toLocaleTimeString('uz-UZ');
 
@@ -714,7 +1072,6 @@
             dataHistory.humidity.push(humidity);
             dataHistory.gas.push(gas);
 
-            // Maksimal nuqtalar sonini cheklash
             if (dataHistory.labels.length > maxDataPoints) {
                 dataHistory.labels.shift();
                 dataHistory.temperature.shift();
@@ -722,10 +1079,9 @@
                 dataHistory.gas.shift();
             }
 
-            chart.update('none'); // Animatsiyasiz yangilash (tezroq)
+            chart.update();
         }
 
-        // Sahifa yopilganda ulanishni uzish
         window.addEventListener('beforeunload', () => {
             if (port && port.readable) {
                 keepReading = false;
